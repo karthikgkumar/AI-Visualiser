@@ -9,5 +9,9 @@
       "api/app.py": {
         "maxDuration": 60
       }
-    }
+    },
+    "env": {
+    "PYTHONPATH": ".",
+    "CHAHFILES": "/tmp/chain"
+  }
   }

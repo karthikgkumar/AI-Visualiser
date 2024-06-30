@@ -6,6 +6,7 @@ from roadmap import RoadmapTool
 from presentation import PresentationTool
 from pdf import PDFCreationTool
 import os
+import fsspec
 
 class AiVisualiserArgs(BaseModel):
     action: str = Field(
@@ -99,6 +100,41 @@ openaiclient = openai.Client(
     api_key=os.getenv('OPENAI_API_KEY'),
     base_url=os.getenv('OPENAI_BASE_URL'),
 )
+
+# Check if running on Vercel
+if os.environ.get('VERCEL'):
+    # Use in-memory filesystem
+    fs = fsspec.filesystem('memory')
+    os.environ['CHAHFILES'] = '/tmp/chain'
+    
+    # Monkey patch builtins
+    builtins_open = __builtins__['open']
+    def patched_open(*args, **kwargs):
+        if args and isinstance(args[0], str) and args[0].startswith('/tmp/chain'):
+            return fs.open(*args, **kwargs)
+        return builtins_open(*args, **kwargs)
+    __builtins__['open'] = patched_open
+
+    # Patch os functions
+    os_path_exists = os.path.exists
+    def patched_exists(path):
+        if path.startswith('/tmp/chain'):
+            return fs.exists(path)
+        return os_path_exists(path)
+    os.path.exists = patched_exists
+
+    os_makedirs = os.makedirs
+    def patched_makedirs(path, *args, **kwargs):
+        if path.startswith('/tmp/chain'):
+            return fs.makedirs(path, *args, **kwargs)
+        return os_makedirs(path, *args, **kwargs)
+    os.makedirs = patched_makedirs
+
+
+
+
+
+
 
 def read_readme():
     readme_path = os.path.join(os.path.dirname(__file__), 'INTRO.md')
