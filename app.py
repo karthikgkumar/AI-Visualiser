@@ -129,7 +129,11 @@ def main():
 
         response_message = response.choices[0].message
         st.session_state.messages.append({"role": "assistant", "content": response_message.content})
-        # st.chat_message("assistant").write(response_message.content)
+        if response_message.content==None:
+            st.chat_message("assistant").write("Tool Execution Happening!!!Wait for some Moment!")
+        else:
+
+            st.chat_message("assistant").write(response_message.content)
 
         tool_calls = response_message.tool_calls
         if tool_calls:
