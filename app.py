@@ -1,12 +1,16 @@
-import chainlit as cl
+import os
+import sys
+import streamlit as st
 from pydantic import BaseModel, Field
 from typing import Optional
 import openai
 from roadmap import RoadmapTool
 from presentation import PresentationTool
 from pdf import PDFCreationTool
-import os
-import fsspec
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 class AiVisualiserArgs(BaseModel):
     action: str = Field(
@@ -101,115 +105,59 @@ openaiclient = openai.Client(
     base_url=os.getenv('OPENAI_BASE_URL'),
 )
 
-# Check if running on Vercel
-if os.environ.get('VERCEL'):
-    # Use in-memory filesystem
-    fs = fsspec.filesystem('memory')
-    os.environ['CHAHFILES'] = '/tmp/chain'
-    
-    # Monkey patch builtins
-    builtins_open = __builtins__['open']
-    def patched_open(*args, **kwargs):
-        if args and isinstance(args[0], str) and args[0].startswith('/tmp/chain'):
-            return fs.open(*args, **kwargs)
-        return builtins_open(*args, **kwargs)
-    __builtins__['open'] = patched_open
+def main():
+    st.title("AI Visualizer")
+    st.write("Welcome to AI Visualizer! How can I help you today?")
 
-    # Patch os functions
-    os_path_exists = os.path.exists
-    def patched_exists(path):
-        if path.startswith('/tmp/chain'):
-            return fs.exists(path)
-        return os_path_exists(path)
-    os.path.exists = patched_exists
+    if 'messages' not in st.session_state:
+        st.session_state.messages = [{"role": "system", "content": sys_prompt}]
 
-    os_makedirs = os.makedirs
-    def patched_makedirs(path, *args, **kwargs):
-        if path.startswith('/tmp/chain'):
-            return fs.makedirs(path, *args, **kwargs)
-        return os_makedirs(path, *args, **kwargs)
-    os.makedirs = patched_makedirs
+    for message in st.session_state.messages:
+        if message['role'] != 'system':
+            st.chat_message(message['role']).write(message['content'])
 
+    if prompt := st.chat_input("Enter your message"):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        st.chat_message("user").write(prompt)
 
+        response = openaiclient.chat.completions.create(
+            model=os.getenv('OPENAI_MODEL'),
+            messages=st.session_state.messages,
+            tools=tools,
+            max_tokens=1200,
+        )
 
+        response_message = response.choices[0].message
+        st.session_state.messages.append({"role": "assistant", "content": response_message.content})
+        # st.chat_message("assistant").write(response_message.content)
 
+        tool_calls = response_message.tool_calls
+        if tool_calls:
+            tool_call = tool_calls[0]
+            tool_call_id = tool_call.id
+            tool_function_name = tool_call.function.name
+            tool_args = eval(tool_call.function.arguments)
 
+            if tool_function_name == 'ai_visualizer':
+                ai_viz = AIVisualizer()
+                results = ai_viz.run(**tool_args)
+                st.session_state.messages.append({
+                    "role": "tool", 
+                    "tool_call_id": tool_call_id, 
+                    "name": tool_function_name, 
+                    "content": results
+                })
 
-
-def read_readme():
-    readme_path = os.path.join(os.path.dirname(__file__), 'INTRO.md')
-    try:
-        with open(readme_path, 'r') as file:
-            return file.read()
-    except FileNotFoundError:
-        return "README.md not found."
-
-@cl.on_chat_start
-async def start():
-    cl.user_session.set("messages", [{"role": "system", "content": sys_prompt}])
-    
-    readme_content = read_readme()
-    await cl.Message(content=readme_content).send()
-
-@cl.on_message
-async def main(message: cl.Message):
-    messages = cl.user_session.get("messages")
-    messages.append({"role": "user", "content": message.content})
-
-    response = openaiclient.chat.completions.create(
-        model=os.getenv('OPENAI_MODEL'),
-        messages=messages,
-        tools=tools,
-        max_tokens=1200,
-        stream=False,
-    )
-
-    response_message = response.choices[0].message
-    messages.append({"role": "assistant", "content": response_message.content})
-
-    await cl.Message(content=response_message.content).send()
-
-    tool_calls = response_message.tool_calls
-    if tool_calls:
-        tool_call = tool_calls[0]
-        tool_call_id = tool_call.id
-        tool_function_name = tool_call.function.name
-        tool_args = eval(tool_call.function.arguments)
-
-        if tool_function_name == 'ai_visualizer':
-            ai_viz = AIVisualizer()
-            results = ai_viz.run(**tool_args)
-            messages.append({
-                "role": "tool", 
-                "tool_call_id": tool_call_id, 
-                "name": tool_function_name, 
-                "content": results
-            })
-
-            model_response_with_function_call = openaiclient.chat.completions.create(
-                model=os.getenv('OPENAI_MODEL'),
-                messages=messages,
-            )
-            final_response = model_response_with_function_call.choices[0].message.content
-            messages.append({"role": "assistant", "content": final_response})
-            await cl.Message(content=final_response).send()
-        else:
-            error_message = f"Error: function {tool_function_name} does not exist"
-            await cl.Message(content=error_message).send()
-    
-    cl.user_session.set("messages", messages)
-
+                model_response_with_function_call = openaiclient.chat.completions.create(
+                    model=os.getenv('OPENAI_MODEL'),
+                    messages=st.session_state.messages,
+                )
+                final_response = model_response_with_function_call.choices[0].message.content
+                st.session_state.messages.append({"role": "assistant", "content": final_response})
+                st.chat_message("assistant").write(final_response)
+            else:
+                error_message = f"Error: function {tool_function_name} does not exist"
+                st.error(error_message)
 
 if __name__ == "__main__":
-    import subprocess
-    import sys
-
-    # Get the path to the current script
-    script_path = sys.argv[0]
-
-    # Construct the chainlit run command
-    command = f"chainlit run {script_path} -w"
-
-    # Run the command
-    subprocess.run(command, shell=True)
-
+    main()

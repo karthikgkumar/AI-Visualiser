@@ -1,4 +1,4 @@
 chainlit
 reportlab
 openai
-fsspec
+python-dotenv

@@ -29,7 +29,6 @@ class PDFCreationTool():
             # Check if the request was successful
             if response_session.status_code == 200:
                 data = response_session.json()
-                print(data)
                 session_id = data.get("token")
                 if data.get("verifiedUser"):
                     session_id = data.get("token")
@@ -51,7 +50,6 @@ class PDFCreationTool():
                 
                 # Reset the BytesIO object to the beginning
                 content.seek(0)
-                print(content)
                 
                 # Prepare the file for upload
                 filename = f"{payload['topic'].replace(' ', '_')}_presentation.pdf"
