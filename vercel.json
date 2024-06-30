@@ -1,17 +1,18 @@
 {
+    "builds": [
+      {
+        "src": "api/app.py",
+        "use": "@vercel/python"
+      }
+    ],
     "routes": [
       {
         "src": "/(.*)",
         "dest": "api/app.py"
       }
     ],
-    "functions": {
-      "api/app.py": {
-        "maxDuration": 60
-      }
-    },
     "env": {
-    "PYTHONPATH": ".",
-    "CHAHFILES": "/tmp/chain"
-  }
+      "PYTHONPATH": ".",
+      "CHAHFILES": "/tmp/chain"
+    }
   }
