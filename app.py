@@ -6,7 +6,6 @@ from roadmap import RoadmapTool
 from presentation import PresentationTool
 from pdf import PDFCreationTool
 import os
-import dotenv
 
 class AiVisualiserArgs(BaseModel):
     action: str = Field(
