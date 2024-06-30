@@ -1,0 +1,13 @@
+{
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "api/app.py"
+      }
+    ],
+    "functions": {
+      "api/app.py": {
+        "maxDuration": 60
+      }
+    }
+  }
