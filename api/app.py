@@ -101,7 +101,7 @@ openaiclient = openai.Client(
 )
 
 def read_readme():
-    readme_path = os.path.join(os.path.dirname(__file__), 'README.md')
+    readme_path = os.path.join(os.path.dirname(__file__), 'INTRO.md')
     try:
         with open(readme_path, 'r') as file:
             return file.read()
@@ -162,3 +162,18 @@ async def main(message: cl.Message):
             await cl.Message(content=error_message).send()
     
     cl.user_session.set("messages", messages)
+
+
+if __name__ == "__main__":
+    import subprocess
+    import sys
+
+    # Get the path to the current script
+    script_path = sys.argv[0]
+
+    # Construct the chainlit run command
+    command = f"chainlit run {script_path} -w"
+
+    # Run the command
+    subprocess.run(command, shell=True)
+
