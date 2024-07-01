@@ -7,7 +7,7 @@ Example: "Can you create a pdf of 2 pages for learning Python programming?"
 
 Feel free to ask for any visual aid you need!
 
-> See examples created in example folder.
+> See examples created in example folder. Also, there's a rate limit for one day I have set. If you're having errors, please note that the rate limit has reached for that day.
 
 ## How to create custom pdf's?
 ![image](https://github.com/karthikgkumar/AI-Visualiser/assets/93706007/fdc1a781-e9b1-4150-bcd7-1abf324c5170)
