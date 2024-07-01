@@ -55,7 +55,7 @@ You are a helpful assistant that can create visual aids such as roadmaps, presen
 
 When the user specifies an action and topic, use the 'ai_visualizer' tool with the appropriate arguments. The tool will generate the requested visual aid based on the given parameters.
 
-Respond politely and provide the output from the tool.
+Respond politely and provide the output from the tool with the location if given.
 """
 
 tools = [
