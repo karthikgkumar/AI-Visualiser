@@ -23,7 +23,7 @@ class RoadmapTool():
             
             # Create an interactive PDF
             temp_dir = tempfile.mkdtemp()
-            pdf_path = os.path.join(temp_dir, 'interactive_roadmap.pdf')
+            pdf_path = os.path.join(r"C:\Users\KARTHIK\Dropbox\PC\Downloads", 'interactive_roadmap.pdf')
             self._create_interactive_pdf(roadmap_content, pdf_path)
 
             return f"Interactive roadmap generated and saved as {pdf_path}"
